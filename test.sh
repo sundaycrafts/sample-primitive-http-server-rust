@@ -19,19 +19,22 @@ cargo_pid=$!
 sleep 2
 
 # 2. Send a request to the localhost port 8080 (avoid exit status)
-(curl http://localhost:8080 --request POST --data '{ "name": "John" }')
+res=$(curl http://localhost:8080 --request POST --data '{ "name": "John" }')
 
 # 3. Check if the cargo run process has not exited with a non-zero exit code
 kill "$cargo_pid"
 exit_code=$?
 
 # 4. If it has exited with a non-zero exit code, print an error message and exit with 1
-if [ $exit_code -ne 0 ]; then
+if [ $exit_code -ne 0 ] || [ -z "$res" ]; then
   echo "Error: cargo run process exited with a non-zero exit code: $exit_code"
   exit 1
 else
   echo "test succeeded"
+  printf "\n\nSERVER LOG:\n"
   cat "$tmp"
+  printf "\n\nCLIENT LOG:\n"
+  echo "$res"
   exit 0
 fi
 
