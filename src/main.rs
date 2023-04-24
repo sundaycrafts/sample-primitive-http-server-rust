@@ -27,6 +27,11 @@ fn handler(stream: TcpStream) {
         }
 
         buf.extend_from_slice(&chunk[..bytes_read]);
+        let chunk_str = String::from_utf8_lossy(&chunk);
+
+        if chunk_str.to_lowercase().find("content-length").is_some() {
+            break;
+        }
     }
 
     writer.write(res.as_bytes()).unwrap();
