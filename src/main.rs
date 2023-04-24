@@ -1,5 +1,15 @@
 use std::error::Error;
-use std::net::TcpListener;
+use std::io::Read;
+use std::net::{TcpListener, TcpStream};
+
+fn handler(mut stream: TcpStream) {
+    let mut buf = [0u8; 256];
+    stream.read(&mut buf).unwrap();
+    println!(
+        "\n=== Received ===\n{}\n===   End   ===",
+        String::from_utf8_lossy(&buf[..])
+    );
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let host = std::env::var("HOST").unwrap_or("localhost".into());
@@ -13,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for incoming in listener.incoming() {
         let stream = incoming.unwrap();
-        println!("New connection from: {}", stream.peer_addr()?);
+        handler(stream);
     }
 
     Ok(())

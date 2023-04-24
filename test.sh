@@ -8,10 +8,10 @@ cleanup() {
 # Register the cleanup function to be called on script exit
 trap cleanup EXIT
 
-#!/bin/bash
+tmp=$(mktemp "${TMPDIR}log-XXXXXX")
 
 # 1. Run the Rust project in the background
-cargo run &
+cargo run > "$tmp" 2>&1 &
 # Save the process ID of the cargo run command
 cargo_pid=$!
 
@@ -19,7 +19,7 @@ cargo_pid=$!
 sleep 2
 
 # 2. Send a request to the localhost port 8080 (avoid exit status)
-(curl http://localhost:8080)
+(curl http://localhost:8080 --request POST --data '{ "name": "John" }')
 
 # 3. Check if the cargo run process has not exited with a non-zero exit code
 kill "$cargo_pid"
@@ -31,6 +31,7 @@ if [ $exit_code -ne 0 ]; then
   exit 1
 else
   echo "test succeeded"
+  cat "$tmp"
   exit 0
 fi
 
