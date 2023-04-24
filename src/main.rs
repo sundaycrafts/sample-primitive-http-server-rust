@@ -1,9 +1,14 @@
 use std::error::Error;
-use std::io::{Read, Write};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-fn handler(mut stream: TcpStream) {
-    let mut buf = [0u8; 256];
+fn handler(stream: TcpStream) {
+    let mut buf = Vec::new();
+
+    // read from buffer to reduce system calls
+    let mut reader = BufReader::new(&stream);
+    let mut writer = BufWriter::new(&stream);
+
     let res_body = "<h1>Hello, World!</h1>\n";
     let res = format!(
         "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
@@ -11,8 +16,20 @@ fn handler(mut stream: TcpStream) {
         res_body
     );
 
-    stream.read(&mut buf).unwrap();
-    stream.write(res.as_bytes()).unwrap();
+    loop {
+        let mut chunk = [0u8; 1024];
+
+        // block until it get data from the buffer
+        let bytes_read = reader.read(&mut chunk).unwrap();
+
+        if bytes_read == 0 {
+            break;
+        }
+
+        buf.extend_from_slice(&chunk[..bytes_read]);
+    }
+
+    writer.write(res.as_bytes()).unwrap();
 
     println!(
         "\n=== Received ===\n{}\n===   End   ===",
